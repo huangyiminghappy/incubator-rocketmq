@@ -85,9 +85,6 @@ public class HAService {
         return result;
     }
 
-    /**
-
-     */
     public void notifyTransferSome(final long offset) {
         for (long value = this.push2SlaveMaxOffset.get(); offset > value; ) {
             boolean ok = this.push2SlaveMaxOffset.compareAndSet(value, offset);
@@ -182,7 +179,9 @@ public class HAService {
             this.serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void shutdown(final boolean interrupt) {
             super.shutdown(interrupt);
@@ -194,7 +193,9 @@ public class HAService {
             }
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void run() {
             log.info(this.getServiceName() + " service started");
@@ -237,7 +238,9 @@ public class HAService {
             log.info(this.getServiceName() + " service end");
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String getServiceName() {
             return AcceptSocketService.class.getSimpleName();
@@ -253,12 +256,12 @@ public class HAService {
         private volatile List<CommitLog.GroupCommitRequest> requestsWrite = new ArrayList<>();
         private volatile List<CommitLog.GroupCommitRequest> requestsRead = new ArrayList<>();
 
-        public void putRequest(final CommitLog.GroupCommitRequest request) {
-            synchronized (this) {
+        public synchronized void putRequest(final CommitLog.GroupCommitRequest request) {
+            synchronized (this.requestsWrite) {
                 this.requestsWrite.add(request);
-                if (hasNotified.compareAndSet(false, true)) {
-                    waitPoint.countDown(); // notify
-                }
+            }
+            if (hasNotified.compareAndSet(false, true)) {
+                waitPoint.countDown(); // notify
             }
         }
 
@@ -273,22 +276,24 @@ public class HAService {
         }
 
         private void doWaitTransfer() {
-            if (!this.requestsRead.isEmpty()) {
-                for (CommitLog.GroupCommitRequest req : this.requestsRead) {
-                    boolean transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
-                    for (int i = 0; !transferOK && i < 5; i++) {
-                        this.notifyTransferObject.waitForRunning(1000);
-                        transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
+            synchronized (this.requestsRead) {
+                if (!this.requestsRead.isEmpty()) {
+                    for (CommitLog.GroupCommitRequest req : this.requestsRead) {
+                        boolean transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
+                        for (int i = 0; !transferOK && i < 5; i++) {
+                            this.notifyTransferObject.waitForRunning(1000);
+                            transferOK = HAService.this.push2SlaveMaxOffset.get() >= req.getNextOffset();
+                        }
+
+                        if (!transferOK) {
+                            log.warn("transfer messsage to slave timeout, " + req.getNextOffset());
+                        }
+
+                        req.wakeupCustomer(transferOK);
                     }
 
-                    if (!transferOK) {
-                        log.warn("transfer messsage to slave timeout, " + req.getNextOffset());
-                    }
-
-                    req.wakeupCustomer(transferOK);
+                    this.requestsRead.clear();
                 }
-
-                this.requestsRead.clear();
             }
         }
 
@@ -372,17 +377,6 @@ public class HAService {
             return !this.reportOffset.hasRemaining();
         }
 
-        // private void reallocateByteBuffer() {
-        // ByteBuffer bb = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);
-        // int remain = this.byteBufferRead.limit() - this.dispatchPostion;
-        // bb.put(this.byteBufferRead.array(), this.dispatchPostion, remain);
-        // this.dispatchPostion = 0;
-        // this.byteBufferRead = bb;
-        // }
-
-        /**
-
-         */
         private void reallocateByteBuffer() {
             int remain = READ_MAX_BUFFER_SIZE - this.dispatchPostion;
             if (remain > 0) {
@@ -424,7 +418,6 @@ public class HAService {
                             break;
                         }
                     } else {
-                        // TODO ERROR
                         log.info("HAClient, processReadEvent read socket < 0");
                         return false;
                     }
@@ -596,8 +589,6 @@ public class HAService {
 
             log.info(this.getServiceName() + " service end");
         }
-
-        //
         // private void disableWriteFlag() {
         // if (this.socketChannel != null) {
         // SelectionKey sk = this.socketChannel.keyFor(this.selector);
@@ -608,8 +599,6 @@ public class HAService {
         // }
         // }
         // }
-        //
-        //
         // private void enableWriteFlag() {
         // if (this.socketChannel != null) {
         // SelectionKey sk = this.socketChannel.keyFor(this.selector);
