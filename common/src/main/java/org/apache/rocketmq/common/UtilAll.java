@@ -28,23 +28,24 @@ import java.net.NetworkInterface;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class UtilAll {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     public static final String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
     public static final String YYYY_MM_DD_HH_MM_SS_SSS = "yyyy-MM-dd#HH:mm:ss:SSS";
@@ -59,6 +60,18 @@ public class UtilAll {
         } catch (Exception e) {
             return -1;
         }
+    }
+
+    public static void sleep(long sleepMs) {
+        if (sleepMs < 0) {
+            return;
+        }
+        try {
+            Thread.sleep(sleepMs);
+        } catch (Throwable ignored) {
+
+        }
+
     }
 
     public static String currentStackTrace() {
@@ -80,7 +93,7 @@ public class UtilAll {
         return nf.format(offset);
     }
 
-    public static long computeEclipseTimeMilliseconds(final long beginTime) {
+    public static long computeElapsedTimeMilliseconds(final long beginTime) {
         return System.currentTimeMillis() - beginTime;
     }
 
@@ -111,7 +124,7 @@ public class UtilAll {
             cal.get(Calendar.MILLISECOND));
     }
 
-    public static long computNextMorningTimeMillis() {
+    public static long computeNextMorningTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
         cal.add(Calendar.DAY_OF_MONTH, 1);
@@ -123,7 +136,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
-    public static long computNextMinutesTimeMillis() {
+    public static long computeNextMinutesTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
         cal.add(Calendar.DAY_OF_MONTH, 0);
@@ -135,7 +148,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
-    public static long computNextHourTimeMillis() {
+    public static long computeNextHourTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
         cal.add(Calendar.DAY_OF_MONTH, 0);
@@ -147,7 +160,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
-    public static long computNextHalfHourTimeMillis() {
+    public static long computeNextHalfHourTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
         cal.add(Calendar.DAY_OF_MONTH, 0);
@@ -517,5 +530,29 @@ public class UtilAll {
             }
             file.delete();
         }
+    }
+
+    public static String List2String(List<String> list,String splitor) {
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        StringBuffer str = new StringBuffer();
+        for (int i = 0;i < list.size();i++) {
+            str.append(list.get(i));
+            if (i == list.size() - 1) {
+                continue;
+            }
+            str.append(splitor);
+        }
+        return str.toString();
+    }
+
+    public static List<String> String2List(String str,String splitor) {
+        if (StringUtils.isEmpty(str)) {
+            return null;
+        }
+
+        String[] addrArray = str.split(splitor);
+        return Arrays.asList(addrArray);
     }
 }

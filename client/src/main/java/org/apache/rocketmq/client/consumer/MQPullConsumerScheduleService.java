@@ -28,13 +28,14 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.slf4j.Logger;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.remoting.RPCHook;
 
 /**
  * Schedule service for pull consumer
  */
 public class MQPullConsumerScheduleService {
-    private final Logger log = ClientLogger.getLog();
+    private final InternalLogger log = ClientLogger.getLog();
     private final MessageQueueListener messageQueueListener = new MessageQueueListenerImpl();
     private final ConcurrentMap<MessageQueue, PullTaskImpl> taskTable =
         new ConcurrentHashMap<MessageQueue, PullTaskImpl>();
@@ -46,6 +47,11 @@ public class MQPullConsumerScheduleService {
 
     public MQPullConsumerScheduleService(final String consumerGroup) {
         this.defaultMQPullConsumer = new DefaultMQPullConsumer(consumerGroup);
+        this.defaultMQPullConsumer.setMessageModel(MessageModel.CLUSTERING);
+    }
+
+    public MQPullConsumerScheduleService(final String consumerGroup, final RPCHook rpcHook) {
+        this.defaultMQPullConsumer = new DefaultMQPullConsumer(consumerGroup, rpcHook);
         this.defaultMQPullConsumer.setMessageModel(MessageModel.CLUSTERING);
     }
 
